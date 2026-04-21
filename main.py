@@ -4,19 +4,25 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 TOKEN = os.getenv("TOKEN")
 
+# твой file_id
 FILE_ID = "AwACAgIAAxkBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7BA"
 
 
 # =======================
-# /start
+# /start — отправка voice
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет от деда:")
-    await update.message.reply_voice(voice=FILE_ID)
+    try:
+        await update.message.reply_text("Привет от деда:")
+        await update.message.reply_voice(voice=FILE_ID)
+
+    except Exception as e:
+        await update.message.reply_text(f"❌ Ошибка: {e}")
+        print("ERROR:", e)
 
 
 # =======================
-# запуск бота
+# запуск
 # =======================
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
