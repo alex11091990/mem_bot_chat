@@ -18,11 +18,26 @@ VOICE_URL = "https://drive.google.com/uc?export=download&id=15uMBtP73WGYjSlQpbCB
 # =======================
 # /start — ответ пользователю
 # =======================
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет от деда: ")
+async def start(update, context):
+    await update.message.reply_text("TEST START")
 
-    await update.message.reply_voice(voice=VOICE_FILE_ID)
+    try:
+        await update.message.reply_voice(voice=FILE_ID)
+        await update.message.reply_text("VOICE OK")
+    except Exception as e:
+        await update.message.reply_text(f"VOICE FAIL: {e}")
 
+    try:
+        await update.message.reply_audio(audio=FILE_ID)
+        await update.message.reply_text("AUDIO OK")
+    except Exception as e:
+        await update.message.reply_text(f"AUDIO FAIL: {e}")
+
+    try:
+        await update.message.reply_document(document=FILE_ID)
+        await update.message.reply_text("DOC OK")
+    except Exception as e:
+        await update.message.reply_text(f"DOC FAIL: {e}")
 
 # =======================
 # рассылка в чаты
