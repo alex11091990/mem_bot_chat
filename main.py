@@ -13,7 +13,7 @@ FILE_ID = "AwACAgIAAxkBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7B
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        await update.message.reply_text("🎧 Лови голосовое")
+        await update.message.reply_text("Привет от деда:")
         await update.message.reply_voice(voice=FILE_ID)
 
     except Exception as e:
