@@ -1,38 +1,64 @@
 import os
+import asyncio
+import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 TOKEN = os.getenv("TOKEN")
+CHAT_ID_1 = os.getenv("CHAT_ID_1")
+CHAT_ID_2 = os.getenv("CHAT_ID_2")
 
-# твой file_id
-FILE_ID = "AwACAgIAAxkBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7BA"
+# голосовое по file_id (для /start)
+VOICE_FILE_ID = "AwACAgIAAxkBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7BA"
+
+# файл с Google Drive
+VOICE_URL = "https://drive.google.com/uc?export=download&id=15uMBtP73WGYjSlQpbCByqiX6k52hyKwQ"
 
 
 # =======================
-# /start — отправка voice
+# /start — ответ пользователю
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Привет от деда: ")
+
+    await update.message.reply_voice(voice=VOICE_FILE_ID)
+
+
+# =======================
+# рассылка в чаты
+# =======================
+async def send_to_chats(context: ContextTypes.DEFAULT_TYPE):
     try:
-        await update.message.reply_text("Привет от деда:")
-        await update.message.reply_voice(voice=FILE_ID)
+        response = requests.get(VOICE_URL)
+
+        with open("voice.ogg", "wb") as f:
+            f.write(response.content)
+
+        for chat_id in [CHAT_ID_1, CHAT_ID_2]:
+            with open("voice.ogg", "rb") as f:
+                await context.bot.send_voice(chat_id=chat_id, voice=f)
+
+        print("✅ Рассылка отправлена")
 
     except Exception as e:
-        await update.message.reply_text(f"❌ Ошибка: {e}")
-        print("ERROR:", e)
+        print("❌ Ошибка рассылки:", e)
 
 
 # =======================
-# запуск
+# запуск бота
 # =======================
-def main():
+async def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
 
     print("🤖 BOT STARTED")
 
-    app.run_polling()
+    # фоновая задача (если нужно по cron)
+    # await send_to_chats(app.bot)
+
+    await app.run_polling()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
