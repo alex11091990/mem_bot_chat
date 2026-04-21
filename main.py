@@ -1,29 +1,41 @@
 import os
-import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 TOKEN = os.getenv("TOKEN")
 
-VOICE_URL = "https://drive.google.com/uc?export=download&id=1bofSKvmZW90mPwPbHSsEsGhbwGaFeYYo"
+
+# 👉 сюда потом вставишь file_id
+FILE_ID = "PASTE_FILE_ID_HERE"
 
 
+# /start — проверка отправки голосового
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if FILE_ID == "PASTE_FILE_ID_HERE":
+        await update.message.reply_text("⚠️ Сначала добавь file_id через /getid")
+        return
+
     await update.message.reply_text("🎧 Лови голосовое")
+    await update.message.reply_voice(voice=FILE_ID)
 
-    response = requests.get(VOICE_URL)
 
-    with open("voice.ogg", "wb") as f:
-        f.write(response.content)
+# /getid — получить file_id голосового
+async def getid(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    voice = update.message.voice
 
-    with open("voice.ogg", "rb") as f:
-        await update.message.reply_voice(voice=f)
+    if voice:
+        file_id = voice.file_id
+        await update.message.reply_text(f"file_id:\n{file_id}")
+        print("FILE_ID:", file_id)
+    else:
+        await update.message.reply_text("📩 Пришли голосовое сообщение")
 
 
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("getid", getid))
 
     print("🤖 BOT STARTED")
 
