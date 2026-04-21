@@ -4,7 +4,6 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 TOKEN = os.getenv("TOKEN")
 
-# сюда вставишь file_id после /getid
 FILE_ID = "PASTE_FILE_ID_HERE"
 
 
@@ -21,40 +20,54 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # =======================
-# /getid — получение file_id
+# /getid — ЛОВИМ ВСЁ ЧТО УГОДНО
 # =======================
 async def getid(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("GETID TRIGGERED")
-
     msg = update.message
+
+    print("========== NEW MESSAGE ==========")
+    print(msg)
+    print("================================")
+
     file_id = None
+    file_type = "unknown"
 
     # voice (настоящее голосовое)
     if msg.voice:
         file_id = msg.voice.file_id
+        file_type = "voice"
 
     # audio (пересланное / файл)
     elif msg.audio:
         file_id = msg.audio.file_id
+        file_type = "audio"
 
-    # document (пересланные файлы)
+    # document (файл с телефона / Telegram)
     elif msg.document:
         file_id = msg.document.file_id
+        file_type = "document"
 
-    # fallback (иногда Telegram сюда кладёт медиа)
+    # video
+    elif msg.video:
+        file_id = msg.video.file_id
+        file_type = "video"
+
+    # fallback (редкие случаи)
     elif msg.effective_attachment:
         file_id = msg.effective_attachment.file_id
+        file_type = "effective_attachment"
 
     if file_id:
-        await msg.reply_text(f"file_id:\n{file_id}")
-        print("FILE_ID:", file_id)
+        await msg.reply_text(f"✅ TYPE: {file_type}\nfile_id:\n{file_id}")
+        print("FILE_ID:", file_id, file_type)
+
     else:
-        await msg.reply_text("❌ Пришли голосовое / аудио / файл напрямую (не текст)")
+        await msg.reply_text("❌ Файл не найден. Отправь его как файл, не текстом")
         print("NO FILE FOUND")
 
 
 # =======================
-# запуск бота
+# запуск
 # =======================
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
