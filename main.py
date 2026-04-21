@@ -1,47 +1,24 @@
 import os
 from telegram import Update
-from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 TOKEN = os.getenv("TOKEN")
 
+# твой file_id
+FILE_ID = "AwACAgIAAxkBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7BA"
+
 
 # =======================
-# авто-ловим ВСЕ файлы
+# /start — отправка voice
 # =======================
-async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = update.message
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        await update.message.reply_text("🎧 Лови голосовое")
+        await update.message.reply_voice(voice=FILE_ID)
 
-    file_id = None
-    file_type = None
-
-    if msg.voice:
-        file_id = msg.voice.file_id
-        file_type = "voice"
-
-    elif msg.audio:
-        file_id = msg.audio.file_id
-        file_type = "audio"
-
-    elif msg.document:
-        file_id = msg.document.file_id
-        file_type = "document"
-
-    elif msg.video:
-        file_id = msg.video.file_id
-        file_type = "video"
-
-    elif msg.video_note:
-        file_id = msg.video_note.file_id
-        file_type = "video_note"
-
-    if file_id:
-        await msg.reply_text(
-            f"✅ TYPE: {file_type}\nfile_id:\n{file_id}"
-        )
-        print("FILE_ID:", file_id, file_type)
-
-    else:
-        await msg.reply_text("📩 Отправь файл (voice/audio/document/video)")
+    except Exception as e:
+        await update.message.reply_text(f"❌ Ошибка: {e}")
+        print("ERROR:", e)
 
 
 # =======================
@@ -50,8 +27,7 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
-    # ловим ВСЕ медиа сообщения
-    app.add_handler(MessageHandler(filters.ALL, handle_file))
+    app.add_handler(CommandHandler("start", start))
 
     print("🤖 BOT STARTED")
 
