@@ -1,69 +1,47 @@
 import os
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
 
 TOKEN = os.getenv("TOKEN")
 
-FILE_ID = "PASTE_FILE_ID_HERE"
-
 
 # =======================
-# /start — отправка voice
+# авто-ловим ВСЕ файлы
 # =======================
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if FILE_ID == "PASTE_FILE_ID_HERE":
-        await update.message.reply_text("⚠️ Сначала получи file_id через /getid")
-        return
-
-    await update.message.reply_text("🎧 Лови голосовое")
-    await update.message.reply_voice(voice=FILE_ID)
-
-
-# =======================
-# /getid — ЛОВИМ ВСЁ ЧТО УГОДНО
-# =======================
-async def getid(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
 
-    print("========== NEW MESSAGE ==========")
-    print(msg)
-    print("================================")
-
     file_id = None
-    file_type = "unknown"
+    file_type = None
 
-    # voice (настоящее голосовое)
     if msg.voice:
         file_id = msg.voice.file_id
         file_type = "voice"
 
-    # audio (пересланное / файл)
     elif msg.audio:
         file_id = msg.audio.file_id
         file_type = "audio"
 
-    # document (файл с телефона / Telegram)
     elif msg.document:
         file_id = msg.document.file_id
         file_type = "document"
 
-    # video
     elif msg.video:
         file_id = msg.video.file_id
         file_type = "video"
 
-    # fallback (редкие случаи)
-    elif msg.effective_attachment:
-        file_id = msg.effective_attachment.file_id
-        file_type = "effective_attachment"
+    elif msg.video_note:
+        file_id = msg.video_note.file_id
+        file_type = "video_note"
 
     if file_id:
-        await msg.reply_text(f"✅ TYPE: {file_type}\nfile_id:\n{file_id}")
+        await msg.reply_text(
+            f"✅ TYPE: {file_type}\nfile_id:\n{file_id}"
+        )
         print("FILE_ID:", file_id, file_type)
 
     else:
-        await msg.reply_text("❌ Файл не найден. Отправь его как файл, не текстом")
-        print("NO FILE FOUND")
+        await msg.reply_text("📩 Отправь файл (voice/audio/document/video)")
 
 
 # =======================
@@ -72,8 +50,8 @@ async def getid(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("getid", getid))
+    # ловим ВСЕ медиа сообщения
+    app.add_handler(MessageHandler(filters.ALL, handle_file))
 
     print("🤖 BOT STARTED")
 
