@@ -1,37 +1,38 @@
 import asyncio
-from telegram import Bot
 import os
 import requests
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 TOKEN = os.getenv("TOKEN")
-CHAT_ID_1 = os.getenv("CHAT_ID_1")
-CHAT_ID_2 = os.getenv("CHAT_ID_2")
 
-VIDEO_URL = "https://drive.google.com/uc?export=download&id=15uMBtP73WGYjSlQpbCByqiX6k52hyKwQ"
+VOICE_URL = "https://drive.google.com/file/d/1bofSKvmZW90mPwPbHSsEsGhbwGaFeYYo/view?usp=sharing"
 
-bot = Bot(token=TOKEN)
 
-async def send_video():
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        response = requests.get(VIDEO_URL)
+        await update.message.reply_text("🎧 Лови голосовое")
 
-        with open("video.mp4", "wb") as f:
+        response = requests.get(VOICE_URL)
+
+        with open("voice.ogg", "wb") as f:
             f.write(response.content)
 
-        with open("video.mp4", "rb") as f:
-            await bot.send_video(chat_id=CHAT_ID_1, video=f)
+        with open("voice.ogg", "rb") as f:
+            await update.message.reply_voice(voice=f)
 
-        with open("video.mp4", "rb") as f:
-            await bot.send_video(chat_id=CHAT_ID_2, video=f)
-
-        print("✅ Видео отправлено")
+        print("✅ Отправлено")
 
     except Exception as e:
         print("❌ Ошибка:", e)
 
 
 async def main():
-    await send_video()
+    app = ApplicationBuilder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+
+    print("🤖 Бот запущен...")
+    await app.run_polling()
 
 
 if __name__ == "__main__":
