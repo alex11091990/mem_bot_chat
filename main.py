@@ -17,33 +17,34 @@ CHAT_IDS = [int(x.strip()) for x in CHAT_IDS.split(",") if x.strip()]
 
 VOICE_ID = "AwACAgIAAxEBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7BA"
 
-VIDEO_ID = "PUT_VIDEO_ID_HERE"  # вставишь после получения
+VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4FOwQ"
 
 
 # =======================
 # /start
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Бот запущен 👋")
+    await update.message.reply_text("Бот работает 👋")
     await update.message.reply_voice(voice=VOICE_ID)
 
 
 # =======================
-# 🔥 получение VIDEO_ID
+# получить VIDEO_ID (оставляем на всякий случай)
 # =======================
 async def get_video_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.video:
-        file_id = update.message.video.file_id
-        await update.message.reply_text(f"🎥 VIDEO_ID:\n{file_id}")
+        await update.message.reply_text(
+            f"🎥 VIDEO_ID:\n{update.message.video.file_id}"
+        )
 
 
 # =======================
-# отправка видео (логика)
+# отправка видео
 # =======================
 async def send_video_job(context: ContextTypes.DEFAULT_TYPE):
     now = datetime.datetime.utcnow()
 
-    # пятница = 4
+    # только пятница
     if now.weekday() != 4:
         return
 
@@ -52,7 +53,7 @@ async def send_video_job(context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_video(
                 chat_id=chat_id,
                 video=VIDEO_ID,
-                caption="📹 Пятничное видео (12:00 Урал)"
+                caption="📹 ВСЕХ С ПЯТНИЦЕЙ!"
             )
         except Exception as e:
             print(f"Ошибка {chat_id}: {e}")
@@ -63,12 +64,12 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
 
-    # ловим видео → выдаём file_id
+    # опционально: получать новые video_id
     app.add_handler(MessageHandler(filters.VIDEO, get_video_id))
 
     job_queue = app.job_queue
 
-    # каждый день 07:00 UTC (12:00 Урал)
+    # 07:00 UTC = 12:00 Урал
     job_queue.run_daily(
         send_video_job,
         time=time(hour=7, minute=0)
