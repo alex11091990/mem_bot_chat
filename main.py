@@ -24,17 +24,19 @@ last_sent_date = None
 # /start + кнопка
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("📹 ТЕСТ ВИДЕО", callback_data="test_video")]
-    ]
+    try:
+        await update.message.reply_text("Привет от деда:")
 
-    await update.message.reply_text(
-        "Привет от деда:",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+        # пробуем как voice
+        try:
+            await update.message.reply_voice(voice=FILE_ID)
+        except Exception:
+            # fallback (если Telegram говорит что это не voice)
+            await update.message.reply_audio(audio=FILE_ID)
 
-    await update.message.reply_voice(voice=FILE_ID)
-
+    except Exception as e:
+        await update.message.reply_text(f"❌ Ошибка: {e}")
+        print("ERROR:", e)
 
 # =======================
 # кнопка тест видео
