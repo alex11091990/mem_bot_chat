@@ -1,6 +1,5 @@
 import os
 import datetime
-from datetime import time
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -26,14 +25,14 @@ VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4F
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет от деда:")
 
-    await context.bot.send_audio(
+    await context.bot.send_voice(
         chat_id=update.effective_chat.id,
-        audio=VOICE_ID
+        voice=VOICE_ID
     )
 
 
 # =======================
-# получить VIDEO_ID (оставляем на всякий случай)
+# получить VIDEO_ID
 # =======================
 async def get_video_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.video:
@@ -68,7 +67,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
 
-    # опционально: получать новые video_id
+    # ловим видео → выдаём file_id
     app.add_handler(MessageHandler(filters.VIDEO, get_video_id))
 
     job_queue = app.job_queue
@@ -76,7 +75,7 @@ def main():
     # 07:00 UTC = 12:00 Урал
     job_queue.run_daily(
         send_video_job,
-        time=time(hour=7, minute=0)
+        time=datetime.time(hour=7, minute=0)
     )
 
     print("🤖 BOT STARTED")
