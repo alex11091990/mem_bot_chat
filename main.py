@@ -14,15 +14,15 @@ TOKEN = os.getenv("TOKEN")
 CHAT_IDS = os.getenv("CHAT_IDS", "")
 CHAT_IDS = [int(x.strip()) for x in CHAT_IDS.split(",") if x.strip()]
 
+# твои file_id (НЕ ТРОГАЕМ)
 FILE_ID = "AwACAgIAAxEBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7BA"
-
 VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4FOwQ"
 
 last_sent_date = None
 
 
 # =======================
-# /start меню
+# /start
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -37,27 +37,26 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # =======================
-# обработка кнопок
+# кнопки
 # =======================
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    # 👴 voice
-if query.data == "voice":
-    try:
+    # 👴 VOICE
+    if query.data == "voice":
         try:
-            await query.message.reply_voice(voice=FILE_ID)
-        except Exception:
             try:
-                await query.message.reply_audio(audio=FILE_ID)
+                await query.message.reply_voice(voice=FILE_ID)
             except Exception:
-                await query.message.reply_document(document=FILE_ID)
+                try:
+                    await query.message.reply_audio(audio=FILE_ID)
+                except Exception:
+                    await query.message.reply_document(document=FILE_ID)
+        except Exception as e:
+            await query.message.reply_text(f"❌ Ошибка voice: {e}")
 
-    except Exception as e:
-        await query.message.reply_text(f"❌ Ошибка voice: {e}")
-        
-    # 📤 video
+    # 📤 VIDEO
     elif query.data == "send_video":
         await query.message.reply_text("📤 Отправляю видео во все чаты...")
 
@@ -75,7 +74,7 @@ if query.data == "voice":
 
 
 # =======================
-# авто-рассылка (пятница)
+# scheduler (пятница 12:00 Урал / 07:00 UTC)
 # =======================
 async def scheduler(app):
     global last_sent_date
@@ -109,7 +108,7 @@ async def scheduler(app):
 
 
 # =======================
-# запуск
+# запуск scheduler
 # =======================
 async def post_init(app):
     asyncio.create_task(scheduler(app))
