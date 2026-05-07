@@ -45,10 +45,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # 👴 voice
     if query.data == "voice":
-    try:
-        await query.message.reply_audio(audio=FILE_ID)
+        try:
+            await query.message.reply_audio(audio=FILE_ID)
     except Exception as e:
-        await query.message.reply_text(f"❌ Ошибка voice: {e}")
+            await query.message.reply_text(f"❌ Ошибка voice: {e}")
 
     # 📤 video
     elif query.data == "send_video":
