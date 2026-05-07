@@ -16,24 +16,34 @@ TOKEN = os.getenv("TOKEN")
 CHAT_IDS = os.getenv("CHAT_IDS", "")
 CHAT_IDS = [int(x.strip()) for x in CHAT_IDS.split(",") if x.strip()]
 
+# 👑 ADMIN ID берём из Railway ENV
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
+
+# 📎 медиа
 FILE_ID = "CQACAgIAAxkBAAOxafw7W0OLl5ZkT62bnFFBfVGnlX8AAuWXAAK-k-lLUw32eMQVcLg7BA"
 VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4FOwQ"
 
 last_sent_date = None
-
-# режим ожидания файла для получения ID
 waiting_for_file = set()
 
 
 # =======================
-# /start меню
+# /start (разные меню)
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("👴 ПРИВЕТ ОТ ДЕДА", callback_data="voice")],
-        [InlineKeyboardButton("📤 РУЧНАЯ ОТПРАВКА", callback_data="send_video")],
-        [InlineKeyboardButton("📎 УЗНАТЬ ID", callback_data="get_id")]
-    ]
+    user_id = update.effective_user.id
+
+    if user_id == ADMIN_ID:
+        keyboard = [
+            [InlineKeyboardButton("👴 ПРИВЕТ ОТ ДЕДА", callback_data="voice")],
+            [InlineKeyboardButton("📹 РУЧНАЯ ОТПРАВКА", callback_data="send_video")],
+            [InlineKeyboardButton("📎 УЗНАТЬ ID", callback_data="get_id")],
+            [InlineKeyboardButton("🛠 ПАНЕЛЬ", callback_data="admin_panel")]
+        ]
+    else:
+        keyboard = [
+            [InlineKeyboardButton("👴 ПРИВЕТ ОТ ДЕДА", callback_data="voice")]
+        ]
 
     await update.message.reply_text(
         "Выбери действие:",
@@ -47,9 +57,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
     user_id = query.from_user.id
 
-    # 👴 voice
+
+    # 👴 VOICE
     if query.data == "voice":
         try:
             try:
@@ -62,9 +74,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             await query.message.reply_text(f"❌ Ошибка voice: {e}")
 
-    # 📤 video
+
+    # 📹 VIDEO (ручная)
     elif query.data == "send_video":
-        await query.message.reply_text("📤 Отправляю видео во все чаты...")
+        if user_id != ADMIN_ID:
+            return
+
+        await query.message.reply_text("📤 Отправляю видео...")
 
         for chat_id in CHAT_IDS:
             try:
@@ -78,16 +94,70 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.message.reply_text("✅ Готово!")
 
-    # 📎 get file id
+
+    # 📎 режим получения ID
     elif query.data == "get_id":
+        if user_id != ADMIN_ID:
+            return
+
         waiting_for_file.add(user_id)
+        await query.message.reply_text("📎 Отправь файл (voice/video/audio)")
+
+
+    # 🛠 админ панель
+    elif query.data == "admin_panel":
+        if user_id != ADMIN_ID:
+            return
+
+        keyboard = [
+            [InlineKeyboardButton("👴 Голос", callback_data="admin_voice")],
+            [InlineKeyboardButton("📹 Видео", callback_data="admin_video")],
+            [InlineKeyboardButton("📊 Статус", callback_data="status")]
+        ]
+
         await query.message.reply_text(
-            "📎 Отправь мне любой файл:\nvoice / video / audio\n\nЯ верну тебе FILE_ID"
+            "🛠 Админ-панель:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+
+    # 👑 admin voice
+    elif query.data == "admin_voice":
+        if user_id != ADMIN_ID:
+            return
+
+        await query.message.reply_voice(voice=FILE_ID)
+
+
+    # 👑 admin video
+    elif query.data == "admin_video":
+        if user_id != ADMIN_ID:
+            return
+
+        for chat_id in CHAT_IDS:
+            await context.bot.send_video(
+                chat_id=chat_id,
+                video=VIDEO_ID,
+                caption="📹 АДМИН ОТПРАВКА"
+            )
+
+        await query.message.reply_text("✅ Отправлено")
+
+
+    # 📊 статус
+    elif query.data == "status":
+        if user_id != ADMIN_ID:
+            return
+
+        await query.message.reply_text(
+            f"🤖 BOT ACTIVE\n"
+            f"📡 Chats: {len(CHAT_IDS)}\n"
+            f"👑 Admin: OK"
         )
 
 
 # =======================
-# ловим файлы
+# получение file_id
 # =======================
 async def catch_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
@@ -96,7 +166,6 @@ async def catch_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     msg = update.message
-
     file_id = None
 
     if msg.voice:
@@ -112,11 +181,11 @@ async def catch_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.reply_text(f"📎 FILE_ID:\n{file_id}")
         waiting_for_file.remove(user_id)
     else:
-        await msg.reply_text("❌ Не смог получить file_id")
+        await msg.reply_text("❌ Не удалось получить ID")
 
 
 # =======================
-# scheduler (пятница)
+# авто-рассылка (пятница)
 # =======================
 async def scheduler(app):
     global last_sent_date
@@ -161,8 +230,6 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
-
-    # ловим файлы для /get_id
     app.add_handler(MessageHandler(filters.VOICE | filters.VIDEO | filters.AUDIO | filters.Document.ALL, catch_file))
 
     print("BOT STARTED")
