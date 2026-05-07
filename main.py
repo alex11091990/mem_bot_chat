@@ -19,15 +19,18 @@ CHAT_IDS = [int(x.strip()) for x in CHAT_IDS.split(",") if x.strip()]
 
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
-# 🎤 3 голосовых
+# 🎤 голосовые
 VOICE_IDS = [
-    "AwACAgIAAxkDAAN5afwl9MjEATd7mAOB0mgis2NGzUgAAraPAAIBoRBKIisXN4ENM5g7BA",
-    "AwACAgIAAxkBAAO_afw_DKWypppxjJi-A7fH2eJMi1kAAg2RAAL-EPlIcTuAC6lc7HA7BA",
-    "AwACAgIAAxkBAAPCafw_aDN0oh3s-bNFFhGH9v7HC4cAAtWVAAJRo-lLHrC_1mK96Xw7BA",
+    "ID_VOICE_1",
+    "ID_VOICE_2",
+    "ID_VOICE_3",
 ]
 
 # 📹 видео
 VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4FOwQ"
+
+# 📸 фото
+PHOTO_ID = "ID_PHOTO"
 
 last_sent_date = None
 waiting_for_file = set()
@@ -42,13 +45,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id == ADMIN_ID:
         keyboard = [
             [InlineKeyboardButton("👴 ПРИВЕТ ОТ ДЕДА", callback_data="voice")],
+            [InlineKeyboardButton("👁 СМОТРИ ДЕДА!", callback_data="photo")],
             [InlineKeyboardButton("📹 РУЧНАЯ ОТПРАВКА", callback_data="send_video")],
             [InlineKeyboardButton("📎 УЗНАТЬ ID", callback_data="get_id")],
-            [InlineKeyboardButton("🛠 ПАНЕЛЬ", callback_data="admin_panel")]
         ]
     else:
         keyboard = [
-            [InlineKeyboardButton("👴 ПРИВЕТ ОТ ДЕДА", callback_data="voice")]
+            [InlineKeyboardButton("👴 ПРИВЕТ ОТ ДЕДА", callback_data="voice")],
+            [InlineKeyboardButton("👁 СМОТРИ ДЕД!", callback_data="photo")],
         ]
 
     await update.message.reply_text(
@@ -67,17 +71,24 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = query.from_user.id
 
 
-    # 👴 VOICE (рандом 3 голосовых)
+    # 🎤 VOICE (рандом)
     if query.data == "voice":
         try:
             voice_id = random.choice(VOICE_IDS)
             await query.message.reply_voice(voice=voice_id)
-
         except Exception as e:
             await query.message.reply_text(f"❌ Ошибка voice: {e}")
 
 
-    # 📹 ручное видео
+    # 👁 PHOTO
+    elif query.data == "photo":
+        try:
+            await query.message.reply_photo(photo=PHOTO_ID)
+        except Exception as e:
+            await query.message.reply_text(f"❌ Ошибка photo: {e}")
+
+
+    # 📹 видео вручную
     elif query.data == "send_video":
         if user_id != ADMIN_ID:
             return
@@ -103,40 +114,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         waiting_for_file.add(user_id)
-        await query.message.reply_text("📎 Отправь voice/video/audio")
-
-
-    # 🛠 админ панель
-    elif query.data == "admin_panel":
-        if user_id != ADMIN_ID:
-            return
-
-        keyboard = [
-            [InlineKeyboardButton("👴 Голос", callback_data="voice")],
-            [InlineKeyboardButton("📹 Видео", callback_data="send_video")],
-            [InlineKeyboardButton("📊 Статус", callback_data="status")]
-        ]
-
         await query.message.reply_text(
-            "🛠 Админ-панель:",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-
-
-    # 📊 статус
-    elif query.data == "status":
-        if user_id != ADMIN_ID:
-            return
-
-        await query.message.reply_text(
-            f"🤖 BOT ACTIVE\n"
-            f"📡 Chats: {len(CHAT_IDS)}\n"
-            f"🎤 Voices: {len(VOICE_IDS)}"
+            "📎 Отправь любой файл:\nvoice / video / photo / audio / document"
         )
 
 
 # =======================
-# получение file_id
+# УНИВЕРСАЛЬНЫЙ FILE_ID
 # =======================
 async def catch_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
@@ -146,21 +130,36 @@ async def catch_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     msg = update.message
     file_id = None
+    file_type = None
 
     if msg.voice:
         file_id = msg.voice.file_id
-    elif msg.audio:
-        file_id = msg.audio.file_id
+        file_type = "VOICE"
+
     elif msg.video:
         file_id = msg.video.file_id
+        file_type = "VIDEO"
+
+    elif msg.photo:
+        file_id = msg.photo[-1].file_id
+        file_type = "PHOTO"
+
+    elif msg.audio:
+        file_id = msg.audio.file_id
+        file_type = "AUDIO"
+
     elif msg.document:
         file_id = msg.document.file_id
+        file_type = "DOCUMENT"
 
     if file_id:
-        await msg.reply_text(f"📎 FILE_ID:\n{file_id}")
+        await msg.reply_text(
+            f"📦 TYPE: {file_type}\n\n📎 FILE_ID:\n`{file_id}`",
+            parse_mode="Markdown"
+        )
         waiting_for_file.remove(user_id)
     else:
-        await msg.reply_text("❌ Не удалось получить ID")
+        await msg.reply_text("❌ Не удалось определить файл")
 
 
 # =======================
@@ -209,7 +208,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
-    app.add_handler(MessageHandler(filters.VOICE | filters.VIDEO | filters.AUDIO | filters.Document.ALL, catch_file))
+    app.add_handler(MessageHandler(filters.ALL, catch_file))
 
     print("BOT STARTED")
     app.run_polling()
