@@ -14,7 +14,6 @@ TOKEN = os.getenv("TOKEN")
 CHAT_IDS = os.getenv("CHAT_IDS", "")
 CHAT_IDS = [int(x.strip()) for x in CHAT_IDS.split(",") if x.strip()]
 
-# твой РАБОЧИЙ voice file_id
 FILE_ID = "AwACAgIAAxEBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7BA"
 
 VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4FOwQ"
@@ -23,30 +22,36 @@ last_sent_date = None
 
 
 # =======================
-# /start + меню
+# /start меню
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
-        [InlineKeyboardButton("📤 ОТПРАВКА", callback_data="send_video")]
+        [InlineKeyboardButton("👴 ПРИВЕТ ОТ ДЕДА", callback_data="voice")],
+        [InlineKeyboardButton("📤 РУЧНАЯ ОТПРАВКА", callback_data="send_video")]
     ]
 
     await update.message.reply_text(
-        "Привет от деда:",
+        "Выбери действие:",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-    # voice (как у тебя раньше работало)
-    await update.message.reply_voice(voice=FILE_ID)
-
 
 # =======================
-# кнопка меню
+# обработка кнопок
 # =======================
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    if query.data == "send_video":
+    # 👴 voice
+    if query.data == "voice":
+        try:
+            await query.message.reply_voice(voice=FILE_ID)
+        except Exception as e:
+            await query.message.reply_text(f"❌ Ошибка voice: {e}")
+
+    # 📤 video
+    elif query.data == "send_video":
         await query.message.reply_text("📤 Отправляю видео во все чаты...")
 
         for chat_id in CHAT_IDS:
@@ -97,7 +102,7 @@ async def scheduler(app):
 
 
 # =======================
-# запуск scheduler
+# запуск
 # =======================
 async def post_init(app):
     asyncio.create_task(scheduler(app))
