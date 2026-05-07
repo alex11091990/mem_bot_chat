@@ -37,50 +37,58 @@ waiting_for_file = set()
 
 
 # =======================
-# START
+# MENU BUILDER
+# =======================
+def get_keyboard(user_id):
+    # 👑 только админ видит админ-кнопки
+    if user_id == ADMIN_ID:
+        keyboard = [
+            [InlineKeyboardButton("👴 ПРИВЕТ ОТ ДЕДА", callback_data="voice")],
+            [InlineKeyboardButton("👁 СМОТРИ ДЕД!", callback_data="photo")],
+            [InlineKeyboardButton("📹 РУЧНАЯ ОТПРАВКА", callback_data="send_video")],
+            [InlineKeyboardButton("📎 УЗНАТЬ ID", callback_data="get_id")]
+        ]
+    else:
+        keyboard = [
+            [InlineKeyboardButton("👴 ПРИВЕТ ОТ ДЕДА", callback_data="voice")],
+            [InlineKeyboardButton("👁 СМОТРИ ДЕД!", callback_data="photo")]
+        ]
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+# =======================
+# /start
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    chat_type = update.effective_chat.type
-
-    keyboard = [
-        [InlineKeyboardButton("👴 ПРИВЕТ ОТ ДЕДА", callback_data="voice")],
-        [InlineKeyboardButton("👁 СМОТРИ ДЕД!", callback_data="photo")],
-    ]
-
-    if user_id == ADMIN_ID:
-        keyboard.append([InlineKeyboardButton("📹 РУЧНАЯ ОТПРАВКА", callback_data="send_video")])
-        keyboard.append([InlineKeyboardButton("📎 УЗНАТЬ ID", callback_data="get_id")])
-
-    text = "👤Твой личнй дед:" if chat_type == "private" else "👥Общественный дед:"
 
     await update.message.reply_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(keyboard)
+        "👴 Твой личнй дед: ",
+        reply_markup=get_keyboard(user_id)
     )
 
 
 # =======================
-# /ded3000 (ТОЛЬКО ГРУППА)
+# /ded3000 ONLY GROUPS
 # =======================
 async def ded3000(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    # ❌ запрет лички
     if update.effective_chat.type == "private":
-        await update.message.reply_text("❌ Эта команда только для групп")
+        await update.message.reply_text("❌ Команда только для групп")
         return
 
-    keyboard = [
-        [InlineKeyboardButton("👴 ПРИВЕТ ОТ ДЕДА", callback_data="voice")],
-        [InlineKeyboardButton("👁 СМОТРИ ДЕД!", callback_data="photo")],
-    ]
+    user_id = update.effective_user.id
 
     await update.message.reply_text(
-        "👥 ГРУППОВОЙ РЕЖИМ ДЕДА АКТИВЕН",
-        reply_markup=InlineKeyboardMarkup(keyboard)
+        "👥 Дед групповой:  ",
+        reply_markup=get_keyboard(user_id)
     )
 
 
 # =======================
-# КНОПКИ
+# BUTTONS
 # =======================
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -88,11 +96,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = query.from_user.id
 
-    # 🎤 VOICE
+    # 🎤 RANDOM VOICE
     if query.data == "voice":
         try:
             voice = random.choice(VOICE_IDS)
             await query.message.reply_voice(voice=voice)
+
         except Exception as e:
             await query.message.reply_text(f"❌ voice error: {e}")
 
@@ -100,11 +109,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "photo":
         try:
             await query.message.reply_photo(photo=PHOTO_ID)
+
         except Exception as e:
             await query.message.reply_text(f"❌ photo error: {e}")
 
-    # 📹 ADMIN SEND VIDEO
+    # 📹 MANUAL VIDEO SEND
     elif query.data == "send_video":
+
         if user_id != ADMIN_ID:
             return
 
@@ -117,24 +128,39 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     video=VIDEO_ID,
                     caption="📹 РУЧНАЯ ОТПРАВКА"
                 )
+
             except Exception as e:
                 print(f"ERROR {chat_id}: {e}")
 
         await query.message.reply_text("✅ ГОТОВО")
 
-    # 📎 GET ID MODE
+    # 📎 GET FILE ID
     elif query.data == "get_id":
+
         if user_id != ADMIN_ID:
             return
 
         waiting_for_file.add(user_id)
-        await query.message.reply_text("📎 отправь файл")
+
+        await query.message.reply_text(
+            "📎 Отправь файл\n\n"
+            "Поддержка:\n"
+            "- voice\n"
+            "- video\n"
+            "- photo\n"
+            "- audio\n"
+            "- document"
+        )
 
 
 # =======================
 # FILE ID CATCHER
 # =======================
 async def catch_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    if not update.message:
+        return
+
     user_id = update.message.from_user.id
 
     if user_id not in waiting_for_file:
@@ -166,14 +192,18 @@ async def catch_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
         file_type = "DOCUMENT"
 
     if file_id:
-        await msg.reply_text(f"📦 {file_type}\n\n{file_id}")
+        await msg.reply_text(
+            f"📦 TYPE: {file_type}\n\nFILE_ID:\n{file_id}"
+        )
+
         waiting_for_file.remove(user_id)
+
     else:
-        await msg.reply_text("❌ не распознал файл")
+        await msg.reply_text("❌ Не удалось определить файл")
 
 
 # =======================
-# AUTO SCHEDULER
+# AUTO FRIDAY VIDEO
 # =======================
 async def scheduler(app):
     global last_sent_date
@@ -182,17 +212,23 @@ async def scheduler(app):
         try:
             now = datetime.datetime.utcnow()
 
+            # пятница
             if now.weekday() == 4 and now.hour == 7 and now.minute == 0:
+
                 today = now.date()
 
                 if last_sent_date != today:
+
+                    print("📹 AUTO SEND")
+
                     for chat_id in CHAT_IDS:
                         try:
                             await app.bot.send_video(
                                 chat_id=chat_id,
                                 video=VIDEO_ID,
-                                caption="📹 ПЯТНИЦА ДЕДА"
+                                caption="📹 ВСЕХ С ПЯТНИЦЕЙ!"
                             )
+
                         except Exception as e:
                             print(f"ERROR {chat_id}: {e}")
 
@@ -204,6 +240,9 @@ async def scheduler(app):
         await asyncio.sleep(10)
 
 
+# =======================
+# POST INIT
+# =======================
 async def post_init(app):
     asyncio.create_task(scheduler(app))
 
@@ -212,15 +251,38 @@ async def post_init(app):
 # MAIN
 # =======================
 def main():
-    app = ApplicationBuilder().token(TOKEN).post_init(post_init).build()
 
+    app = (
+        ApplicationBuilder()
+        .token(TOKEN)
+        .post_init(post_init)
+        .build()
+    )
+
+    # команды
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("ded3000", ded3000))
+
+    # кнопки
     app.add_handler(CallbackQueryHandler(button_handler))
-    app.add_handler(MessageHandler(filters.ALL, catch_file))
+
+    # file_id catcher
+    app.add_handler(
+        MessageHandler(
+            filters.VOICE
+            | filters.VIDEO
+            | filters.PHOTO
+            | filters.AUDIO
+            | filters.Document.ALL,
+            catch_file
+        )
+    )
 
     print("BOT STARTED")
-    app.run_polling()
+
+    app.run_polling(
+        drop_pending_updates=True
+    )
 
 
 if __name__ == "__main__":
