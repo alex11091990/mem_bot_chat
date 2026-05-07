@@ -9,9 +9,9 @@ TOKEN = os.getenv("TOKEN")
 CHAT_IDS = os.getenv("CHAT_IDS", "")
 CHAT_IDS = [int(x.strip()) for x in CHAT_IDS.split(",") if x.strip()]
 
-VOICE_ID = "AwACAgIAAxEBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7BA"
+FILE_ID_1 = "AwACAgIAAxEBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7BA"
 
-VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4FOwQ"
+FILE_ID_2 = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4FOwQ"
 
 # чтобы не отправляло 100 раз
 last_sent_date = None
@@ -23,7 +23,7 @@ last_sent_date = None
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет от деда:")
 
-    update.message.reply_voice(voice=FILE_ID)
+    update.message.reply_voice(voice=FILE_ID_1)
 
 
 # =======================
@@ -47,7 +47,7 @@ async def scheduler(app):
                     try:
                         await app.bot.send_video(
                             chat_id=chat_id,
-                            video=VIDEO_ID,
+                            video=FILE_ID_2,
                             caption="📹 ВСЕХ С ПЯТНИЦЕЙ!"
                         )
                     except Exception as e:
