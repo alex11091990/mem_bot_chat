@@ -64,7 +64,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
     await update.message.reply_text(
-        "👴 Твой личнй дед: ",
+        "👴 Твой личный дед: ",
         reply_markup=get_keyboard(user_id)
     )
 
