@@ -52,7 +52,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard.append([InlineKeyboardButton("📹 РУЧНАЯ ОТПРАВКА", callback_data="send_video")])
         keyboard.append([InlineKeyboardButton("📎 УЗНАТЬ ID", callback_data="get_id")])
 
-    text = "👤 ЛИЧКА ДЕДА" if chat_type == "private" else "👥 ГРУППА ДЕДА"
+    text = "👤Твой личнй дед:" if chat_type == "private" else "👥Общественный дед:"
 
     await update.message.reply_text(
         text,
