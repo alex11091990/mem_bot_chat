@@ -19,7 +19,7 @@ CHAT_IDS = [int(x.strip()) for x in CHAT_IDS.split(",") if x.strip()]
 
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
-# 🎤 VOICE IDS (твои)
+# 🎤 VOICE
 VOICE_IDS = [
     "AwACAgIAAxkDAAN5afwl9MjEATd7mAOB0mgis2NGzUgAAraPAAIBoRBKIisXN4ENM5g7BA",
     "AwACAgIAAxkBAAO_afw_DKWypppxjJi-A7fH2eJMi1kAAg2RAAL-EPlIcTuAC6lc7HA7BA",
@@ -48,19 +48,33 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("👁 СМОТРИ ДЕД!", callback_data="photo")],
     ]
 
-    # 🔐 админ кнопки
     if user_id == ADMIN_ID:
-        keyboard.append(
-            [InlineKeyboardButton("📹 РУЧНАЯ ОТПРАВКА", callback_data="send_video")]
-        )
-        keyboard.append(
-            [InlineKeyboardButton("📎 УЗНАТЬ ID", callback_data="get_id")]
-        )
+        keyboard.append([InlineKeyboardButton("📹 РУЧНАЯ ОТПРАВКА", callback_data="send_video")])
+        keyboard.append([InlineKeyboardButton("📎 УЗНАТЬ ID", callback_data="get_id")])
 
-    text = "👤 ЛИЧНЫЙ ДЕД АКТИВЕН" if chat_type == "private" else "👥 ГРУППОВОЙ ДЕД АКТИВЕН"
+    text = "👤 ЛИЧКА ДЕДА" if chat_type == "private" else "👥 ГРУППА ДЕДА"
 
     await update.message.reply_text(
         text,
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+
+# =======================
+# /ded3000 (ТОЛЬКО ГРУППА)
+# =======================
+async def ded3000(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.type == "private":
+        await update.message.reply_text("❌ Эта команда только для групп")
+        return
+
+    keyboard = [
+        [InlineKeyboardButton("👴 ПРИВЕТ ОТ ДЕДА", callback_data="voice")],
+        [InlineKeyboardButton("👁 СМОТРИ ДЕД!", callback_data="photo")],
+    ]
+
+    await update.message.reply_text(
+        "👥 ГРУППОВОЙ РЕЖИМ ДЕДА АКТИВЕН",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
@@ -74,7 +88,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = query.from_user.id
 
-    # 🎤 VOICE (рандом)
+    # 🎤 VOICE
     if query.data == "voice":
         try:
             voice = random.choice(VOICE_IDS)
@@ -108,13 +122,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.message.reply_text("✅ ГОТОВО")
 
-    # 📎 GET FILE ID MODE
+    # 📎 GET ID MODE
     elif query.data == "get_id":
         if user_id != ADMIN_ID:
             return
 
         waiting_for_file.add(user_id)
-        await query.message.reply_text("📎 отправь любой файл")
+        await query.message.reply_text("📎 отправь файл")
 
 
 # =======================
@@ -152,16 +166,14 @@ async def catch_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
         file_type = "DOCUMENT"
 
     if file_id:
-        await msg.reply_text(
-            f"📦 TYPE: {file_type}\n\n📎 FILE_ID:\n{file_id}"
-        )
+        await msg.reply_text(f"📦 {file_type}\n\n{file_id}")
         waiting_for_file.remove(user_id)
     else:
         await msg.reply_text("❌ не распознал файл")
 
 
 # =======================
-# AUTO SCHEDULER (ПЯТНИЦА)
+# AUTO SCHEDULER
 # =======================
 async def scheduler(app):
     global last_sent_date
@@ -179,7 +191,7 @@ async def scheduler(app):
                             await app.bot.send_video(
                                 chat_id=chat_id,
                                 video=VIDEO_ID,
-                                caption="📹 ВСЕХ С ПЯТНИЦЕЙ!"
+                                caption="📹 ПЯТНИЦА ДЕДА"
                             )
                         except Exception as e:
                             print(f"ERROR {chat_id}: {e}")
@@ -203,6 +215,7 @@ def main():
     app = ApplicationBuilder().token(TOKEN).post_init(post_init).build()
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("ded3000", ded3000))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.ALL, catch_file))
 
