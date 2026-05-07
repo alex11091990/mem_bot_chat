@@ -25,7 +25,7 @@ VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4F
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Бот работает 👋")
-    await update.message.reply_voice(voice=VOICE_ID)
+    await update.message.reply_audio(audio=VOICE_ID)
 
 
 # =======================
