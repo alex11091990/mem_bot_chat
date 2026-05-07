@@ -5,8 +5,8 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
-    ContextTypes,
     CallbackQueryHandler,
+    ContextTypes,
 )
 
 TOKEN = os.getenv("TOKEN")
@@ -14,46 +14,47 @@ TOKEN = os.getenv("TOKEN")
 CHAT_IDS = os.getenv("CHAT_IDS", "")
 CHAT_IDS = [int(x.strip()) for x in CHAT_IDS.split(",") if x.strip()]
 
+# твой РАБОЧИЙ voice file_id
 FILE_ID = "AwACAgIAAxEBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7BA"
+
 VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4FOwQ"
 
 last_sent_date = None
 
 
 # =======================
-# /start + кнопка
+# /start + меню
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        await update.message.reply_text("Привет от деда:")
+    keyboard = [
+        [InlineKeyboardButton("📤 ОТПРАВКА", callback_data="send_video")]
+    ]
 
-        # пробуем как voice
-        try:
-            await update.message.reply_voice(voice=FILE_ID)
-        except Exception:
-            # fallback (если Telegram говорит что это не voice)
-            await update.message.reply_audio(audio=FILE_ID)
+    await update.message.reply_text(
+        "Привет от деда:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 
-    except Exception as e:
-        await update.message.reply_text(f"❌ Ошибка: {e}")
-        print("ERROR:", e)
+    # voice (как у тебя раньше работало)
+    await update.message.reply_voice(voice=FILE_ID)
+
 
 # =======================
-# кнопка тест видео
+# кнопка меню
 # =======================
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    if query.data == "test_video":
-        await query.message.reply_text("📹 Отправляю видео во все чаты...")
+    if query.data == "send_video":
+        await query.message.reply_text("📤 Отправляю видео во все чаты...")
 
         for chat_id in CHAT_IDS:
             try:
                 await context.bot.send_video(
                     chat_id=chat_id,
                     video=VIDEO_ID,
-                    caption="📹 ТЕСТ ОТПРАВКА"
+                    caption="📹 РУЧНАЯ ОТПРАВКА"
                 )
             except Exception as e:
                 print(f"ERROR {chat_id}: {e}")
@@ -75,7 +76,7 @@ async def scheduler(app):
                 today = now.date()
 
                 if last_sent_date != today:
-                    print("📹 Авто-отправка...")
+                    print("📹 AUTO SEND...")
 
                     for chat_id in CHAT_IDS:
                         try:
