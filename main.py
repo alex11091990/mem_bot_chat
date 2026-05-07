@@ -19,17 +19,17 @@ CHAT_IDS = [int(x.strip()) for x in CHAT_IDS.split(",") if x.strip()]
 
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
-# 🎤 голосовые (3 штуки)
+# 🎤 ТВОИ VOICE (3 штуки)
 VOICE_IDS = [
     "AwACAgIAAxkDAAN5afwl9MjEATd7mAOB0mgis2NGzUgAAraPAAIBoRBKIisXN4ENM5g7BA",
     "AwACAgIAAxkBAAO_afw_DKWypppxjJi-A7fH2eJMi1kAAg2RAAL-EPlIcTuAC6lc7HA7BA",
-    "AwACAgIAAxkBAAPCafw_aDN0oh3s-bNFFhGH9v7HC4cAAtWVAAJRo-lLHrC_1mK96Xw7BA",
+    "AwACAgIAAxkBAAPCafw_aDN0oh3s-bNFFhGH9v7HC4cAAtWVAAJRo-lLHrC_1mK96Xw7BA"
 ]
 
 # 📹 видео
 VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4FOwQ"
 
-# 📸 фото
+# 👁 фото
 PHOTO_ID = "AgACAgIAAxkBAAPSafxBfqWSA8V2TP48Smc_5hOQwf4AAtoXaxu-k-lLmmMettLlhIMBAAMCAAN5AAM7BA"
 
 last_sent_date = None
@@ -37,26 +37,37 @@ waiting_for_file = set()
 
 
 # =======================
-# START
+# ЛИЧКА (/start)
 # =======================
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
+async def start_private(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.type != "private":
+        return
 
     keyboard = [
         [InlineKeyboardButton("👴 ПРИВЕТ ОТ ДЕДА", callback_data="voice")],
         [InlineKeyboardButton("👁 СМОТРИ ДЕД!", callback_data="photo")],
     ]
 
-    if user_id == ADMIN_ID:
-        keyboard.append(
-            [InlineKeyboardButton("📹 РУЧНАЯ ОТПРАВКА", callback_data="send_video")]
-        )
-        keyboard.append(
-            [InlineKeyboardButton("📎 УЗНАТЬ ID", callback_data="get_id")]
-        )
+    await update.message.reply_text(
+        "👴 ЛИЧНЫЙ ДЕД АКТИВЕН",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+
+# =======================
+# ГРУППЫ (/ded3000)
+# =======================
+async def start_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.type not in ["group", "supergroup"]:
+        return
+
+    keyboard = [
+        [InlineKeyboardButton("👴 ПРИВЕТ ОТ ДЕДА", callback_data="voice")],
+        [InlineKeyboardButton("👁 СМОТРИ ДЕД!", callback_data="photo")],
+    ]
 
     await update.message.reply_text(
-        "Выбери действие:",
+        "👴 ГРУППОВОЙ ДЕД АКТИВЕН",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
@@ -70,7 +81,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = query.from_user.id
 
-
     # 🎤 VOICE (рандом)
     if query.data == "voice":
         try:
@@ -79,7 +89,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             await query.message.reply_text(f"❌ voice error: {e}")
 
-
     # 👁 PHOTO
     elif query.data == "photo":
         try:
@@ -87,8 +96,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             await query.message.reply_text(f"❌ photo error: {e}")
 
-
-    # 📹 SEND VIDEO
+    # 📹 VIDEO (админ)
     elif query.data == "send_video":
         if user_id != ADMIN_ID:
             return
@@ -105,16 +113,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             except Exception as e:
                 print(f"ERROR {chat_id}: {e}")
 
-        await query.message.reply_text("✅ Готово")
-
-
-    # 📎 GET ID MODE
-    elif query.data == "get_id":
-        if user_id != ADMIN_ID:
-            return
-
-        waiting_for_file.add(user_id)
-        await query.message.reply_text("📎 Отправь любой файл (voice/video/photo/audio/document)")
+        await query.message.reply_text("✅ ГОТОВО")
 
 
 # =======================
@@ -157,11 +156,11 @@ async def catch_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         waiting_for_file.remove(user_id)
     else:
-        await msg.reply_text("❌ Не удалось определить файл")
+        await msg.reply_text("❌ не удалось определить файл")
 
 
 # =======================
-# АВТО РАССЫЛКА (пятница)
+# АВТО РАССЫЛКА
 # =======================
 async def scheduler(app):
     global last_sent_date
@@ -174,8 +173,6 @@ async def scheduler(app):
                 today = now.date()
 
                 if last_sent_date != today:
-                    print("📹 AUTO SEND")
-
                     for chat_id in CHAT_IDS:
                         try:
                             await app.bot.send_video(
@@ -204,7 +201,8 @@ async def post_init(app):
 def main():
     app = ApplicationBuilder().token(TOKEN).post_init(post_init).build()
 
-    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("start", start_private))
+    app.add_handler(CommandHandler("ded3000", start_group))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.ALL, catch_file))
 
