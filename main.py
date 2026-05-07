@@ -47,7 +47,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query.data == "voice":
         try:
             await query.message.reply_audio(audio=FILE_ID)
-    except Exception as e:
+        except Exception as e:
             await query.message.reply_text(f"❌ Ошибка voice: {e}")
 
     # 📤 video
