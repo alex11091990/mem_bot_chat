@@ -1,5 +1,6 @@
 import os
 import datetime
+from datetime import time
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -14,31 +15,34 @@ TOKEN = os.getenv("TOKEN")
 CHAT_IDS = os.getenv("CHAT_IDS", "")
 CHAT_IDS = [int(x.strip()) for x in CHAT_IDS.split(",") if x.strip()]
 
-VOICE_ID = "AwACAgIAAxEBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7BA"
+# =======================
+# РАБОЧИЙ VOICE (как у тебя был)
+# =======================
+FILE_ID = "AwACAgIAAxkBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7BA"
 
+# видео
 VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4FOwQ"
 
 
 # =======================
-# /start
+# /start — как в рабочей версии
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет от деда:")
+    try:
+        await update.message.reply_text("Привет от деда:")
+        await update.message.reply_voice(voice=FILE_ID)
 
-    await context.bot.send_voice(
-        chat_id=update.effective_chat.id,
-        voice=VOICE_ID
-    )
+    except Exception as e:
+        await update.message.reply_text(f"❌ Ошибка: {e}")
+        print("ERROR:", e)
 
 
 # =======================
-# получить VIDEO_ID
+# видео ID (оставляем)
 # =======================
 async def get_video_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.video:
-        await update.message.reply_text(
-            f"🎥 VIDEO_ID:\n{update.message.video.file_id}"
-        )
+        await update.message.reply_text(update.message.video.file_id)
 
 
 # =======================
@@ -47,7 +51,7 @@ async def get_video_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def send_video_job(context: ContextTypes.DEFAULT_TYPE):
     now = datetime.datetime.utcnow()
 
-    # только пятница
+    # пятница
     if now.weekday() != 4:
         return
 
@@ -59,26 +63,24 @@ async def send_video_job(context: ContextTypes.DEFAULT_TYPE):
                 caption="📹 ВСЕХ С ПЯТНИЦЕЙ!"
             )
         except Exception as e:
-            print(f"Ошибка {chat_id}: {e}")
+            print("ERROR:", e)
 
 
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-
-    # ловим видео → выдаём file_id
     app.add_handler(MessageHandler(filters.VIDEO, get_video_id))
 
     job_queue = app.job_queue
 
-    # 07:00 UTC = 12:00 Урал
+    # ⚠️ ПРОСТО И СТАБИЛЬНО (как ты хотел)
     job_queue.run_daily(
         send_video_job,
-        time=datetime.time(hour=7, minute=0)
+        time=time(hour=7, minute=0)
     )
 
-    print("🤖 BOT STARTED")
+    print("BOT STARTED")
     app.run_polling()
 
 
