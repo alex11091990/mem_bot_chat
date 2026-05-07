@@ -23,7 +23,7 @@ last_sent_date = None
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет от деда:")
 
-    await.update.message.reply_voice(voice=FILE_ID_1)
+    await update.message.reply_voice(voice=FILE_ID_1)
 
 
 # =======================
