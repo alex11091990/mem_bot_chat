@@ -30,7 +30,7 @@ VOICE_IDS = [
 VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4FOwQ"
 
 # 📸 фото
-PHOTO_ID = "PHOTO_ID"
+PHOTO_ID = "AgACAgIAAxkBAAPSafxBfqWSA8V2TP48Smc_5hOQwf4AAtoXaxu-k-lLmmMettLlhIMBAAMCAAN5AAM7BA"
 
 last_sent_date = None
 waiting_for_file = set()
