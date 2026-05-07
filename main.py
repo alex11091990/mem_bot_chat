@@ -44,12 +44,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     # 👴 voice
-    if query.data == "voice":
+if query.data == "voice":
+    try:
         try:
-            await query.message.reply_audio(audio=FILE_ID)
-        except Exception as e:
-            await query.message.reply_text(f"❌ Ошибка voice: {e}")
+            await query.message.reply_voice(voice=FILE_ID)
+        except Exception:
+            try:
+                await query.message.reply_audio(audio=FILE_ID)
+            except Exception:
+                await query.message.reply_document(document=FILE_ID)
 
+    except Exception as e:
+        await query.message.reply_text(f"❌ Ошибка voice: {e}")
+        
     # 📤 video
     elif query.data == "send_video":
         await query.message.reply_text("📤 Отправляю видео во все чаты...")
