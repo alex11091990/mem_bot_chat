@@ -24,8 +24,12 @@ VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4F
 # /start
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Бот работает 👋")
-    await update.message.reply_audio(audio=VOICE_ID)
+    await update.message.reply_text("Привет от деда:")
+
+    await context.bot.send_audio(
+        chat_id=update.effective_chat.id,
+        audio=VOICE_ID
+    )
 
 
 # =======================
