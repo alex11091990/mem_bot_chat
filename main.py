@@ -1,6 +1,7 @@
 import os
 import asyncio
 import datetime
+import random
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -16,11 +17,16 @@ TOKEN = os.getenv("TOKEN")
 CHAT_IDS = os.getenv("CHAT_IDS", "")
 CHAT_IDS = [int(x.strip()) for x in CHAT_IDS.split(",") if x.strip()]
 
-# 👑 ADMIN ID берём из Railway ENV
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
-# 📎 медиа
-FILE_ID = "AwACAgIAAxkDAAN5afwl9MjEATd7mAOB0mgis2NGzUgAAraPAAIBoRBKIisXN4ENM5g7BA"
+# 🎤 3 голосовых
+VOICE_IDS = [
+    "AwACAgIAAxkDAAN5afwl9MjEATd7mAOB0mgis2NGzUgAAraPAAIBoRBKIisXN4ENM5g7BA",
+    "AwACAgIAAxkBAAO_afw_DKWypppxjJi-A7fH2eJMi1kAAg2RAAL-EPlIcTuAC6lc7HA7BA",
+    "AwACAgIAAxkBAAPCafw_aDN0oh3s-bNFFhGH9v7HC4cAAtWVAAJRo-lLHrC_1mK96Xw7BA",
+]
+
+# 📹 видео
 VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4FOwQ"
 
 last_sent_date = None
@@ -28,7 +34,7 @@ waiting_for_file = set()
 
 
 # =======================
-# /start (разные меню)
+# /start
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -61,21 +67,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = query.from_user.id
 
 
-    # 👴 VOICE
+    # 👴 VOICE (рандом 3 голосовых)
     if query.data == "voice":
         try:
-            try:
-                await query.message.reply_voice(voice=FILE_ID)
-            except Exception:
-                try:
-                    await query.message.reply_audio(audio=FILE_ID)
-                except Exception:
-                    await query.message.reply_document(document=FILE_ID)
+            voice_id = random.choice(VOICE_IDS)
+            await query.message.reply_voice(voice=voice_id)
+
         except Exception as e:
             await query.message.reply_text(f"❌ Ошибка voice: {e}")
 
 
-    # 📹 VIDEO (ручная)
+    # 📹 ручное видео
     elif query.data == "send_video":
         if user_id != ADMIN_ID:
             return
@@ -101,7 +103,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         waiting_for_file.add(user_id)
-        await query.message.reply_text("📎 Отправь файл (voice/video/audio)")
+        await query.message.reply_text("📎 Отправь voice/video/audio")
 
 
     # 🛠 админ панель
@@ -110,8 +112,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         keyboard = [
-            [InlineKeyboardButton("👴 Голос", callback_data="admin_voice")],
-            [InlineKeyboardButton("📹 Видео", callback_data="admin_video")],
+            [InlineKeyboardButton("👴 Голос", callback_data="voice")],
+            [InlineKeyboardButton("📹 Видео", callback_data="send_video")],
             [InlineKeyboardButton("📊 Статус", callback_data="status")]
         ]
 
@@ -119,29 +121,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🛠 Админ-панель:",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-
-
-    # 👑 admin voice
-    elif query.data == "admin_voice":
-        if user_id != ADMIN_ID:
-            return
-
-        await query.message.reply_voice(voice=FILE_ID)
-
-
-    # 👑 admin video
-    elif query.data == "admin_video":
-        if user_id != ADMIN_ID:
-            return
-
-        for chat_id in CHAT_IDS:
-            await context.bot.send_video(
-                chat_id=chat_id,
-                video=VIDEO_ID,
-                caption="📹 АДМИН ОТПРАВКА"
-            )
-
-        await query.message.reply_text("✅ Отправлено")
 
 
     # 📊 статус
@@ -152,7 +131,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(
             f"🤖 BOT ACTIVE\n"
             f"📡 Chats: {len(CHAT_IDS)}\n"
-            f"👑 Admin: OK"
+            f"🎤 Voices: {len(VOICE_IDS)}"
         )
 
 
