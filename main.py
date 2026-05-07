@@ -21,9 +21,9 @@ ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
 # 🎤 голосовые (3 штуки)
 VOICE_IDS = [
-    "VOICE_ID_1",
-    "VOICE_ID_2",
-    "VOICE_ID_3",
+    "AwACAgIAAxkDAAN5afwl9MjEATd7mAOB0mgis2NGzUgAAraPAAIBoRBKIisXN4ENM5g7BA",
+    "AwACAgIAAxkBAAO_afw_DKWypppxjJi-A7fH2eJMi1kAAg2RAAL-EPlIcTuAC6lc7HA7BA",
+    "AwACAgIAAxkBAAPCafw_aDN0oh3s-bNFFhGH9v7HC4cAAtWVAAJRo-lLHrC_1mK96Xw7BA",
 ]
 
 # 📹 видео
