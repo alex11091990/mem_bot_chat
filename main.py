@@ -19,7 +19,7 @@ CHAT_IDS = [int(x.strip()) for x in CHAT_IDS.split(",") if x.strip()]
 
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
-# 🎤 VOICE
+# 🎤 VOICE IDS (твои)
 VOICE_IDS = [
     "AwACAgIAAxkDAAN5afwl9MjEATd7mAOB0mgis2NGzUgAAraPAAIBoRBKIisXN4ENM5g7BA",
     "AwACAgIAAxkBAAO_afw_DKWypppxjJi-A7fH2eJMi1kAAg2RAAL-EPlIcTuAC6lc7HA7BA",
@@ -33,29 +33,31 @@ VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4F
 PHOTO_ID = "AgACAgIAAxkBAAPSafxBfqWSA8V2TP48Smc_5hOQwf4AAtoXaxu-k-lLmmMettLlhIMBAAMCAAN5AAM7BA"
 
 last_sent_date = None
+waiting_for_file = set()
 
 
 # =======================
-# /start (ОДИН ДЛЯ ВСЕХ)
+# START
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_type = update.effective_chat.type
     user_id = update.effective_user.id
+    chat_type = update.effective_chat.type
 
     keyboard = [
         [InlineKeyboardButton("👴 ПРИВЕТ ОТ ДЕДА", callback_data="voice")],
         [InlineKeyboardButton("👁 СМОТРИ ДЕД!", callback_data="photo")],
     ]
 
+    # 🔐 админ кнопки
     if user_id == ADMIN_ID:
         keyboard.append(
             [InlineKeyboardButton("📹 РУЧНАЯ ОТПРАВКА", callback_data="send_video")]
         )
+        keyboard.append(
+            [InlineKeyboardButton("📎 УЗНАТЬ ID", callback_data="get_id")]
+        )
 
-    if chat_type == "private":
-        text = "👤 ЛИЧНЫЙ ДЕД АКТИВЕН"
-    else:
-        text = "👥 ГРУППОВОЙ ДЕД АКТИВЕН"
+    text = "👤 ЛИЧНЫЙ ДЕД АКТИВЕН" if chat_type == "private" else "👥 ГРУППОВОЙ ДЕД АКТИВЕН"
 
     await update.message.reply_text(
         text,
@@ -106,9 +108,60 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.message.reply_text("✅ ГОТОВО")
 
+    # 📎 GET FILE ID MODE
+    elif query.data == "get_id":
+        if user_id != ADMIN_ID:
+            return
+
+        waiting_for_file.add(user_id)
+        await query.message.reply_text("📎 отправь любой файл")
+
 
 # =======================
-# АВТО РАССЫЛКА (ПЯТНИЦА)
+# FILE ID CATCHER
+# =======================
+async def catch_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.from_user.id
+
+    if user_id not in waiting_for_file:
+        return
+
+    msg = update.message
+
+    file_id = None
+    file_type = None
+
+    if msg.voice:
+        file_id = msg.voice.file_id
+        file_type = "VOICE"
+
+    elif msg.video:
+        file_id = msg.video.file_id
+        file_type = "VIDEO"
+
+    elif msg.photo:
+        file_id = msg.photo[-1].file_id
+        file_type = "PHOTO"
+
+    elif msg.audio:
+        file_id = msg.audio.file_id
+        file_type = "AUDIO"
+
+    elif msg.document:
+        file_id = msg.document.file_id
+        file_type = "DOCUMENT"
+
+    if file_id:
+        await msg.reply_text(
+            f"📦 TYPE: {file_type}\n\n📎 FILE_ID:\n{file_id}"
+        )
+        waiting_for_file.remove(user_id)
+    else:
+        await msg.reply_text("❌ не распознал файл")
+
+
+# =======================
+# AUTO SCHEDULER (ПЯТНИЦА)
 # =======================
 async def scheduler(app):
     global last_sent_date
@@ -151,7 +204,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
-    app.add_handler(MessageHandler(filters.ALL, lambda u, c: None))
+    app.add_handler(MessageHandler(filters.ALL, catch_file))
 
     print("BOT STARTED")
     app.run_polling()
