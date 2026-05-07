@@ -20,7 +20,7 @@ CHAT_IDS = [int(x.strip()) for x in CHAT_IDS.split(",") if x.strip()]
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
 # 📎 медиа
-FILE_ID = "CQACAgIAAxkBAAOxafw7W0OLl5ZkT62bnFFBfVGnlX8AAuWXAAK-k-lLUw32eMQVcLg7BA"
+FILE_ID = "AwACAgIAAxkDAAN5afwl9MjEATd7mAOB0mgis2NGzUgAAraPAAIBoRBKIisXN4ENM5g7BA"
 VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4FOwQ"
 
 last_sent_date = None
