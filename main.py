@@ -9,61 +9,66 @@ TOKEN = os.getenv("TOKEN")
 CHAT_IDS = os.getenv("CHAT_IDS", "")
 CHAT_IDS = [int(x.strip()) for x in CHAT_IDS.split(",") if x.strip()]
 
-FILE_ID_1 = "AwACAgIAAxEBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7BA"
+# ✅ твой рабочий file_id (voice)
+FILE_ID = "AwACAgIAAxkBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7BA"
 
-FILE_ID_2 = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4FOwQ"
+VIDEO_ID = "BAACAgIAAxkBAAN6afwniQABqd7swuDiWiuRqOusJaCoAAIslwACvpPpS_T8ckBYjI4FOwQ"
 
-# чтобы не отправляло 100 раз
 last_sent_date = None
 
 
 # =======================
-# /start
+# /start (как раньше)
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет от деда:")
+    try:
+        await update.message.reply_text("Привет от деда:")
+        await update.message.reply_voice(voice=FILE_ID)
 
-    await update.message.reply_voice(voice=FILE_ID_1)
+    except Exception as e:
+        await update.message.reply_text(f"❌ Ошибка: {e}")
+        print("ERROR:", e)
 
 
 # =======================
-# авто-рассылка (без JobQueue)
+# авто-рассылка
 # =======================
 async def scheduler(app):
     global last_sent_date
 
     while True:
-        now = datetime.datetime.utcnow()
+        try:
+            now = datetime.datetime.utcnow()
 
-        # пятница = 4
-        if now.weekday() == 4 and now.hour == 7:
-            today = now.date()
+            # пятница 07:00 UTC = 12:00 Урал
+            if now.weekday() == 4 and now.hour == 7:
+                today = now.date()
 
-            # защита от повторной отправки
-            if last_sent_date != today:
-                print("📹 Отправка видео...")
+                if last_sent_date != today:
+                    print("📹 Отправка видео...")
 
-                for chat_id in CHAT_IDS:
-                    try:
-                        await app.bot.send_video(
-                            chat_id=chat_id,
-                            video=FILE_ID_2,
-                            caption="📹 ВСЕХ С ПЯТНИЦЕЙ!"
-                        )
-                    except Exception as e:
-                        print(f"ERROR {chat_id}: {e}")
+                    for chat_id in CHAT_IDS:
+                        try:
+                            await app.bot.send_video(
+                                chat_id=chat_id,
+                                video=VIDEO_ID,
+                                caption="📹 ВСЕХ С ПЯТНИЦЕЙ!"
+                            )
+                        except Exception as e:
+                            print(f"ERROR {chat_id}: {e}")
 
-                last_sent_date = today
+                    last_sent_date = today
 
-        # проверка раз в 30 секунд
+        except Exception as e:
+            print("SCHEDULER ERROR:", e)
+
         await asyncio.sleep(30)
 
 
 # =======================
-# запуск
+# запуск фонового цикла
 # =======================
 async def post_init(app):
-    # запускаем фоновый цикл
     asyncio.create_task(scheduler(app))
 
 
