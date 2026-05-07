@@ -1,4 +1,5 @@
 import os
+import datetime
 from datetime import time
 from telegram import Update
 from telegram.ext import (
@@ -10,24 +11,25 @@ from telegram.ext import (
 )
 
 TOKEN = os.getenv("TOKEN")
+
 CHAT_IDS = os.getenv("CHAT_IDS", "")
 CHAT_IDS = [int(x.strip()) for x in CHAT_IDS.split(",") if x.strip()]
 
 VOICE_ID = "AwACAgIAAxEBAAMIaeck7mBixFtnFPvR5iPpFatiMMgAAraPAAIBoRBKIisXN4ENM5g7BA"
 
-VIDEO_ID = "PUT_VIDEO_ID_HERE"  # пока заглушка
+VIDEO_ID = "PUT_VIDEO_ID_HERE"  # вставишь после получения
 
 
 # =======================
 # /start
 # =======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Бот работает 👋")
+    await update.message.reply_text("Бот запущен 👋")
     await update.message.reply_voice(voice=VOICE_ID)
 
 
 # =======================
-# 🔥 ВРЕМЕННО: получить VIDEO_ID
+# 🔥 получение VIDEO_ID
 # =======================
 async def get_video_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.video:
@@ -36,15 +38,21 @@ async def get_video_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # =======================
-# отправка видео
+# отправка видео (логика)
 # =======================
 async def send_video_job(context: ContextTypes.DEFAULT_TYPE):
+    now = datetime.datetime.utcnow()
+
+    # пятница = 4
+    if now.weekday() != 4:
+        return
+
     for chat_id in CHAT_IDS:
         try:
             await context.bot.send_video(
                 chat_id=chat_id,
                 video=VIDEO_ID,
-                caption="📹 Пятничное видео"
+                caption="📹 Пятничное видео (12:00 Урал)"
             )
         except Exception as e:
             print(f"Ошибка {chat_id}: {e}")
@@ -55,19 +63,18 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
 
-    # 🔥 ловим видео и возвращаем file_id
+    # ловим видео → выдаём file_id
     app.add_handler(MessageHandler(filters.VIDEO, get_video_id))
 
     job_queue = app.job_queue
 
-    # 12:00 Урал = 07:00 UTC
-    job_queue.run_weekly(
+    # каждый день 07:00 UTC (12:00 Урал)
+    job_queue.run_daily(
         send_video_job,
-        time=time(hour=7, minute=0),
-        day_of_week=4
+        time=time(hour=7, minute=0)
     )
 
-    print("BOT STARTED")
+    print("🤖 BOT STARTED")
     app.run_polling()
 
 
